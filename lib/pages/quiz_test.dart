@@ -112,64 +112,70 @@ class _QuizTestState extends State<QuizTest> {
     final currentPlayer = _selectedPlayers[_currentQuestion];
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text('Question ${_currentQuestion + 1} / ${_selectedPlayers.length}'),
-      ),
-      resizeToAvoidBottomInset: true,
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              SizedBox(
-                width: double.infinity,
-                child: AspectRatio(
-                  aspectRatio: 1,
-                  child: Image.network(
-                    currentPlayer.imageUrl,
-                    fit: BoxFit.cover,
-                    loadingBuilder: (context, child, loadingProgress) {
-                      if (loadingProgress == null) return child;
-                      return const Center(child: CircularProgressIndicator());
-                    },
-                    errorBuilder: (context, error, stackTrace) {
-                      return const Center(
-                        child: Icon(Icons.broken_image, size: 80, color: Colors.grey),
-                      );
-                    },
-                  ),
-                ),
-              ),
-              const SizedBox(height: 24),
-              TextField(
-                autofocus: true,
-                controller: _controller,
-                decoration: const InputDecoration(
-                  labelText: 'Quel joueur est-ce ?',
-                  border: OutlineInputBorder(),
-                ),
-                onChanged: (value) {
-                  setState(() {
-                    _answer = value;
-                  });
-                },
-                onSubmitted: (_) {
-                  if (_answer.trim().isNotEmpty) {
-                    _submitAnswer();
-                  }
-                },
-              ),
-              const SizedBox(height: 20),
-              ElevatedButton(
-                onPressed: _answer.trim().isEmpty ? null : _submitAnswer,
-                child: const Text('Valider'),
-              ),
-            ],
+  appBar: AppBar(
+    title: Text('Question ${_currentQuestion + 1} / ${_selectedPlayers.length}'),
+  ),
+  resizeToAvoidBottomInset: true,
+  body: SafeArea(
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        SizedBox(
+          height: 250,
+          width: double.infinity,
+          child: Image.network(
+            currentPlayer.imageUrl,
+            fit: BoxFit.contain,
+            loadingBuilder: (context, child, loadingProgress) {
+              if (loadingProgress == null) return child;
+              return const Center(child: CircularProgressIndicator());
+            },
+            errorBuilder: (context, error, stackTrace) {
+              return const Center(
+                child: Icon(Icons.broken_image, size: 80, color: Colors.grey),
+              );
+            },
           ),
         ),
-      ),
-    );
+
+        const SizedBox(height: 16),
+
+        Expanded(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              children: [
+                TextField(
+                  autofocus: true,
+                  controller: _controller,
+                  decoration: const InputDecoration(
+                    labelText: 'Quel joueur est-ce ?',
+                    border: OutlineInputBorder(),
+                  ),
+                  onChanged: (value) {
+                    setState(() {
+                      _answer = value;
+                    });
+                  },
+                  onSubmitted: (_) {
+                    if (_answer.trim().isNotEmpty) {
+                      _submitAnswer();
+                    }
+                  },
+                ),
+                const SizedBox(height: 20),
+                ElevatedButton(
+                  onPressed: _answer.trim().isEmpty ? null : _submitAnswer,
+                  child: const Text('Valider'),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    ),
+  ),
+);
   }
 }
 
