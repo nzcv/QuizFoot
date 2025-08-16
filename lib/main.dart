@@ -18,7 +18,15 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         primarySwatch: Colors.red,
-        fontFamily: 'Arial',
+        fontFamily: 'Oswald', // ← Oswald par défaut pour tous les textes
+        textTheme: const TextTheme(
+          displayLarge: TextStyle(fontWeight: FontWeight.bold, fontSize: 32),
+          displayMedium: TextStyle(fontWeight: FontWeight.bold, fontSize: 28),
+          displaySmall: TextStyle(fontWeight: FontWeight.bold, fontSize: 24),
+          bodyLarge: TextStyle(fontWeight: FontWeight.normal, fontSize: 18),
+          bodyMedium: TextStyle(fontWeight: FontWeight.normal, fontSize: 16),
+          labelLarge: TextStyle(fontWeight: FontWeight.bold, fontSize: 20), // pour les boutons
+        ),
       ),
       initialRoute: '/',
       routes: {

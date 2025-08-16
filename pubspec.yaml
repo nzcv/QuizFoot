@@ -58,8 +58,14 @@ flutter:
   # the material Icons class.
   assets:
     - assets/players.json
+    - assets/images/ball.png
   uses-material-design: true
-
+  fonts:
+    - family: Oswald
+      fonts:
+        - asset: assets/fonts/Oswald-Regular.ttf
+        - asset: assets/fonts/Oswald-Bold.ttf
+          weight: 700
 
 
 
