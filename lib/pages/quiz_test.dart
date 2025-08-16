@@ -28,15 +28,60 @@ class _QuizTestState extends State<QuizTest> {
   }
 
   Future<void> _loadPlayersAndStartQuiz() async {
-    final players = await loadPlayers();
-    players.shuffle();
-    setState(() {
-      _players = players;
-      _selectedPlayers = players.take(10).toList();
-      _quizStartTime = DateTime.now();
-      _isLoading = false;
-    });
+  final players = await loadPlayers();
+
+  // On clone la liste pour pouvoir retirer les joueurs déjà sélectionnés
+  final remainingPlayers = List<Player>.from(players);
+
+  List<Player> selected = [];
+
+  // 1 joueur level 1
+  selected.add(_pickRandomPlayer(remainingPlayers, [1]));
+  remainingPlayers.remove(selected.last);
+
+  // 2 joueurs level 2 ou 3
+  for (int i = 0; i < 2; i++) {
+    final player = _pickRandomPlayer(remainingPlayers, [2, 3]);
+    selected.add(player);
+    remainingPlayers.remove(player);
   }
+
+  // 2 joueurs level 4 ou 5
+  for (int i = 0; i < 2; i++) {
+    final player = _pickRandomPlayer(remainingPlayers, [4, 5]);
+    selected.add(player);
+    remainingPlayers.remove(player);
+  }
+
+  // 2 joueurs level 6 ou 7
+  for (int i = 0; i < 2; i++) {
+    final player = _pickRandomPlayer(remainingPlayers, [6, 7]);
+    selected.add(player);
+    remainingPlayers.remove(player);
+  }
+
+  // 2 joueurs level 8 ou 9
+  for (int i = 0; i < 2; i++) {
+    final player = _pickRandomPlayer(remainingPlayers, [8, 9]);
+    selected.add(player);
+    remainingPlayers.remove(player);
+  }
+
+  // 1 joueur level 10
+  selected.add(_pickRandomPlayer(remainingPlayers, [10]));
+  remainingPlayers.remove(selected.last);
+
+  for (var p in selected) {
+  print('Player: ${p.name}, Level: ${p.level}');
+};
+
+  setState(() {
+    _players = players;
+    _selectedPlayers = selected;
+    _quizStartTime = DateTime.now();
+    _isLoading = false;
+  });
+}
 
   @override
   void dispose() {
@@ -98,6 +143,23 @@ class _QuizTestState extends State<QuizTest> {
         ),
       ),
     );
+  }
+
+  Player _pickRandomPlayer(List<Player> players, List<int> levels) {
+  final filtered = players.where((p) => levels.contains(p.level)).toList();
+  if (filtered.isEmpty) {
+    // Si aucun joueur dans ce niveau, on cherche dans le niveau supérieur
+    final maxLevel = players.map((p) => p.level).reduce((a, b) => a > b ? a : b);
+    for (int lvl in levels) {
+      if (lvl < maxLevel) {
+        return _pickRandomPlayer(players, [lvl + 1]);
+      }
+    }
+    // fallback : on prend un joueur au hasard
+    return players[(players.length * (0.5)).toInt()]; 
+  }
+  filtered.shuffle();
+  return filtered.first;
   }
 
   @override
