@@ -32,7 +32,7 @@ class _QuizTestState extends State<QuizTest> {
     players.shuffle();
     setState(() {
       _players = players;
-      _selectedPlayers = players.take(5).toList();
+      _selectedPlayers = players.take(10).toList();
       _quizStartTime = DateTime.now();
       _isLoading = false;
     });

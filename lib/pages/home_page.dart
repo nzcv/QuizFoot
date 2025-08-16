@@ -29,7 +29,7 @@ class HomePage extends StatelessWidget {
               ),
               const SizedBox(height: 20),
               const Text(
-                'L appli pour les VRAIS fans de foot !',
+                'L appli pour les vrais fans de foot !',
                 style: TextStyle(fontSize: 18),
                 textAlign: TextAlign.center,
               ),
