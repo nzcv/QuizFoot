@@ -179,7 +179,24 @@ class _QuizTestState extends State<QuizTest> {
   ),
   resizeToAvoidBottomInset: true,
   body: SafeArea(
+  child: AnimatedSwitcher(
+    duration: const Duration(milliseconds: 300),
+    switchInCurve: Curves.easeOut,
+    switchOutCurve: Curves.easeIn,
+    transitionBuilder: (child, animation) {
+      final slide = Tween<Offset>(
+        begin: const Offset(0.08, 0), // léger slide depuis la droite
+        end: Offset.zero,
+      ).animate(animation);
+
+      return SlideTransition(
+        position: slide,
+        child: FadeTransition(opacity: animation, child: child),
+      );
+    },
+    // IMPORTANT : la clé doit changer quand _currentQuestion change
     child: Column(
+      key: ValueKey(_currentQuestion),
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         SizedBox(
@@ -199,9 +216,7 @@ class _QuizTestState extends State<QuizTest> {
             },
           ),
         ),
-
         const SizedBox(height: 16),
-
         Expanded(
           child: SingleChildScrollView(
             padding: const EdgeInsets.all(16),
@@ -215,14 +230,10 @@ class _QuizTestState extends State<QuizTest> {
                     border: OutlineInputBorder(),
                   ),
                   onChanged: (value) {
-                    setState(() {
-                      _answer = value;
-                    });
+                    setState(() => _answer = value);
                   },
                   onSubmitted: (_) {
-                    if (_answer.trim().isNotEmpty) {
-                      _submitAnswer();
-                    }
+                    if (_answer.trim().isNotEmpty) _submitAnswer();
                   },
                 ),
                 const SizedBox(height: 20),
@@ -237,6 +248,7 @@ class _QuizTestState extends State<QuizTest> {
       ],
     ),
   ),
+),
 );
   }
 }
