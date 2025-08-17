@@ -9,12 +9,6 @@ class Candidate {
 }
 
 /// Page de jeu "Qui a menti ?"
-/// Étape 1 :
-/// - Affiche une affirmation en haut.
-/// - Affiche 10 cartes "À classer".
-/// - Deux zones de dépôt : VRAI et FAUX.
-/// - On peut glisser/déposer les cartes dans une zone, et les re-déplacer si besoin.
-/// (Pas encore de bouton Valider ni de vérification 5/5 — ça arrive à l’étape 2)
 class QuiAMentiPage extends StatefulWidget {
   const QuiAMentiPage({super.key});
 
@@ -23,15 +17,8 @@ class QuiAMentiPage extends StatefulWidget {
 }
 
 class _QuiAMentiPageState extends State<QuiAMentiPage> {
-  // -------------------
-  // Données "en dur" pour POC
-  // -------------------
-  // Affirmation affichée en haut. (Tu mettras une vraie plus tard via JSON/API)
   final String claim = "J'ai marqué plus de 100 buts en Ligue 1";
 
-  // 10 joueurs : 5 pour qui l'affirmation est vraie, 5 pour qui elle est fausse.
-  // ⚠️ Ici c'est du DUMMY pour démo : le but est la mécanique, pas la véracité historique.
-  // Tu remplaceras par des vraies données dans une prochaine étape.
   final List<Candidate> _allCandidates = [
     Candidate(name: "Kylian Mbappé", isTrueForClaim: true),
     Candidate(name: "Edinson Cavani", isTrueForClaim: true),
@@ -45,21 +32,16 @@ class _QuiAMentiPageState extends State<QuiAMentiPage> {
     Candidate(name: "Mohamed Salah", isTrueForClaim: false),
   ];
 
-  // -------------------
-  // État des 3 colonnes : À classer / VRAI / FAUX
-  // -------------------
-  late List<Candidate> _toClassify; // liste de départ
+  late List<Candidate> _toClassify;
   final List<Candidate> _trueBucket = [];
   final List<Candidate> _falseBucket = [];
 
   @override
   void initState() {
     super.initState();
-    // On clone la liste source pour ne pas muter _allCandidates.
     _toClassify = List<Candidate>.from(_allCandidates);
   }
 
-  // Utilitaire : retire un candidat de toutes les listes, puis l'ajoute dans "target"
   void _moveCandidate(Candidate c, List<Candidate> target) {
     setState(() {
       _toClassify.remove(c);
@@ -69,19 +51,14 @@ class _QuiAMentiPageState extends State<QuiAMentiPage> {
     });
   }
 
-  // Widget réutilisable : une "carte" draggable pour un candidat
   Widget _draggableCard(Candidate c) {
-    return LongPressDraggable<Candidate>(
-      // data = l'objet qu'on transporte
+    return Draggable<Candidate>(
       data: c,
-      // "child" = rendu normal
       child: _candidateChip(c),
-      // "feedback" = rendu sous le doigt pendant le drag (Material pour garder l'ombre/arrondis)
       feedback: Material(
         color: Colors.transparent,
         child: _candidateChip(c, elevated: true),
       ),
-      // "childWhenDragging" = placeholder laissé à la place du child pendant le drag
       childWhenDragging: Opacity(
         opacity: 0.3,
         child: _candidateChip(c),
@@ -89,7 +66,6 @@ class _QuiAMentiPageState extends State<QuiAMentiPage> {
     );
   }
 
-  // Petit chip visuel pour un candidat (utilisé partout)
   Widget _candidateChip(Candidate c, {bool elevated = false}) {
     return Card(
       elevation: elevated ? 6 : 2,
@@ -104,15 +80,12 @@ class _QuiAMentiPageState extends State<QuiAMentiPage> {
     );
   }
 
-  // Zone de drop générique (VRAI/FAUX) avec un titre et les items dedans (eux aussi redraggables)
   Widget _dropZone({
     required String title,
     required List<Candidate> bucket,
   }) {
     return DragTarget<Candidate>(
-      // Quand un candidat est "au-dessus" de la zone de drop
-      onWillAccept: (_) => true, // on accepte tout candidat
-      // Quand on le lâche dans la zone
+      onWillAccept: (_) => true,
       onAccept: (candidate) => _moveCandidate(candidate, bucket),
       builder: (context, candidateData, rejected) {
         return Container(
@@ -133,7 +106,6 @@ class _QuiAMentiPageState extends State<QuiAMentiPage> {
                 style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 8),
-              // Wrap = permet de faire passer à la ligne les cartes
               Wrap(
                 spacing: 8,
                 runSpacing: 8,
@@ -148,7 +120,6 @@ class _QuiAMentiPageState extends State<QuiAMentiPage> {
     );
   }
 
-  // Colonne "À classer" (source) — les cartes sont aussi draggable
   Widget _toClassifyColumn() {
     return Container(
       padding: const EdgeInsets.all(12),
@@ -175,22 +146,62 @@ class _QuiAMentiPageState extends State<QuiAMentiPage> {
     );
   }
 
+  void _validate() {
+  if (_trueBucket.length != 5 || _falseBucket.length != 5) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text("⚠️ Tu dois mettre exactement 5 joueurs dans chaque colonne !"),
+        duration: Duration(seconds: 2),
+      ),
+    );
+    return;
+  }
+
+  int correct = 0;
+  for (var c in _trueBucket) {
+    if (c.isTrueForClaim) correct++;
+  }
+  for (var c in _falseBucket) {
+    if (!c.isTrueForClaim) correct++;
+  }
+
+  final success = correct == 10;
+
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(
+      content: Text(
+        success
+            ? "🎉 Bravo, tout est correct !"
+            : "Tu as $correct/10 bonnes réponses. Essaie encore 😉",
+      ),
+      backgroundColor: success ? Colors.green : Colors.red,
+      duration: const Duration(seconds: 2),
+    ),
+  );
+
+  // Si tout est correct, redirection vers l'accueil après 2 secondes
+  if (success) {
+    Future.delayed(const Duration(seconds: 2), () {
+      if (mounted) {
+        Navigator.popUntil(context, (route) => route.isFirst);
+      }
+    });
+  }
+}
+
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // AppBar simple pour se repérer
       appBar: AppBar(
         title: const Text("Qui a menti ?"),
         centerTitle: true,
       ),
-
-      // Corps : on reste simple et fonctionnel
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(12),
           child: Column(
             children: [
-              // 1) L'affirmation du tour, bien visible
               Card(
                 color: Colors.amber.shade100,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -211,12 +222,9 @@ class _QuiAMentiPageState extends State<QuiAMentiPage> {
                 ),
               ),
               const SizedBox(height: 10),
-
-              // 2) Les 3 zones : À classer / VRAI / FAUX
               Expanded(
                 child: Column(
                   children: [
-                    // Ligne VRAI / FAUX (zones de drop)
                     Expanded(
                       child: Row(
                         children: [
@@ -226,13 +234,19 @@ class _QuiAMentiPageState extends State<QuiAMentiPage> {
                       ),
                     ),
                     const SizedBox(height: 10),
-                    // Zone "À classer" en bas (source)
                     _toClassifyColumn(),
                   ],
                 ),
               ),
-
-              // 3) Le bouton "Valider" arrivera à l'étape 2 (avec règles 5/5 + feedback)
+              const SizedBox(height: 12),
+              ElevatedButton(
+                onPressed: _validate,
+                style: ElevatedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+                child: const Text("Valider", style: TextStyle(fontSize: 18)),
+              ),
             ],
           ),
         ),
