@@ -43,6 +43,9 @@ class _QuiAMentiPageState extends State<QuiAMentiPage> {
   }
 
   void _moveCandidate(Candidate c, List<Candidate> target) {
+    // Limite max de 5 cartes par bucket
+    if (target.length >= 5) return;
+
     setState(() {
       _toClassify.remove(c);
       _trueBucket.remove(c);
@@ -68,13 +71,13 @@ class _QuiAMentiPageState extends State<QuiAMentiPage> {
 
   Widget _candidateChip(Candidate c, {bool elevated = false}) {
     return Card(
-      elevation: elevated ? 6 : 2,
+      elevation: elevated ? 4 : 2,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
         child: Text(
           c.name,
-          style: const TextStyle(fontSize: 16),
+          style: const TextStyle(fontSize: 14),
         ),
       ),
     );
@@ -89,26 +92,23 @@ class _QuiAMentiPageState extends State<QuiAMentiPage> {
       onAccept: (candidate) => _moveCandidate(candidate, bucket),
       builder: (context, candidateData, rejected) {
         return Container(
-          padding: const EdgeInsets.all(12),
+          padding: const EdgeInsets.all(10),
           margin: const EdgeInsets.symmetric(horizontal: 6),
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: Colors.black12,
-              width: 1.2,
-            ),
+            border: Border.all(color: Colors.black12, width: 1.2),
           ),
           child: Column(
             children: [
               Text(
-                title,
-                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                "$title (${bucket.length}/5)",
+                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 6),
               Wrap(
-                spacing: 8,
-                runSpacing: 8,
+                spacing: 6,
+                runSpacing: 6,
                 children: [
                   for (final c in bucket) _draggableCard(c),
                 ],
@@ -121,74 +121,89 @@ class _QuiAMentiPageState extends State<QuiAMentiPage> {
   }
 
   Widget _toClassifyColumn() {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      margin: const EdgeInsets.symmetric(horizontal: 6),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.black12, width: 1.2),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text("À classer", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-          const SizedBox(height: 8),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
+    return DragTarget<Candidate>(
+      onWillAccept: (_) => true,
+      onAccept: (candidate) {
+        setState(() {
+          _trueBucket.remove(candidate);
+          _falseBucket.remove(candidate);
+          if (!_toClassify.contains(candidate)) {
+            _toClassify.add(candidate);
+          }
+        });
+      },
+      builder: (context, candidateData, rejected) {
+        return Container(
+          padding: const EdgeInsets.all(10),
+          margin: const EdgeInsets.symmetric(horizontal: 6),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: Colors.black12, width: 1.2),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              for (final c in _toClassify) _draggableCard(c),
+              const Text(
+                "À classer",
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 6),
+              Wrap(
+                spacing: 6,
+                runSpacing: 6,
+                children: [
+                  for (final c in _toClassify) _draggableCard(c),
+                ],
+              ),
             ],
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 
   void _validate() {
-  if (_trueBucket.length != 5 || _falseBucket.length != 5) {
+    if (_trueBucket.length != 5 || _falseBucket.length != 5) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("⚠️ Tu dois mettre exactement 5 joueurs dans chaque colonne !"),
+          duration: Duration(seconds: 2),
+        ),
+      );
+      return;
+    }
+
+    int correct = 0;
+    for (var c in _trueBucket) {
+      if (c.isTrueForClaim) correct++;
+    }
+    for (var c in _falseBucket) {
+      if (!c.isTrueForClaim) correct++;
+    }
+
+    final success = correct == 10;
+
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text("⚠️ Tu dois mettre exactement 5 joueurs dans chaque colonne !"),
-        duration: Duration(seconds: 2),
+      SnackBar(
+        content: Text(
+          success
+              ? "🎉 Bravo, tout est correct !"
+              : "Tu as $correct/10 bonnes réponses. Essaie encore 😉",
+        ),
+        backgroundColor: success ? Colors.green : Colors.red,
+        duration: const Duration(seconds: 2),
       ),
     );
-    return;
+
+    if (success) {
+      Future.delayed(const Duration(seconds: 2), () {
+        if (mounted) {
+          Navigator.popUntil(context, (route) => route.isFirst);
+        }
+      });
+    }
   }
-
-  int correct = 0;
-  for (var c in _trueBucket) {
-    if (c.isTrueForClaim) correct++;
-  }
-  for (var c in _falseBucket) {
-    if (!c.isTrueForClaim) correct++;
-  }
-
-  final success = correct == 10;
-
-  ScaffoldMessenger.of(context).showSnackBar(
-    SnackBar(
-      content: Text(
-        success
-            ? "🎉 Bravo, tout est correct !"
-            : "Tu as $correct/10 bonnes réponses. Essaie encore 😉",
-      ),
-      backgroundColor: success ? Colors.green : Colors.red,
-      duration: const Duration(seconds: 2),
-    ),
-  );
-
-  // Si tout est correct, redirection vers l'accueil après 2 secondes
-  if (success) {
-    Future.delayed(const Duration(seconds: 2), () {
-      if (mounted) {
-        Navigator.popUntil(context, (route) => route.isFirst);
-      }
-    });
-  }
-}
-
 
   @override
   Widget build(BuildContext context) {
