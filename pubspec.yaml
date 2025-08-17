@@ -59,6 +59,7 @@ flutter:
   assets:
     - assets/players.json
     - assets/images/ball.png
+    - assets/images/logo.png
   uses-material-design: true
   fonts:
     - family: Oswald

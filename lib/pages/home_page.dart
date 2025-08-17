@@ -28,7 +28,7 @@ class _AnimatedBallBackgroundState extends State<AnimatedBallBackground>
     _loadBallImage();
 
     // 2️⃣ Créer quelques ballons avec positions aléatoires
-    _balls = List.generate(10, (index) {
+    _balls = List.generate(5, (index) {
       return Ball(
         x: _random.nextDouble(),
         y: _random.nextDouble(),
@@ -110,7 +110,7 @@ class BallPainter extends CustomPainter {
     // 1️⃣ Dégradé vert pour le terrain
     final Rect rect = Rect.fromLTWH(0, 0, size.width, size.height);
     final Gradient gradient = LinearGradient(
-      colors: [Colors.green[700]!, Colors.green[500]!],
+      colors: [Colors.green[400]!, Colors.green[900]!],
       begin: Alignment.topCenter,
       end: Alignment.bottomCenter,
     );
@@ -156,13 +156,15 @@ class HomePage extends StatelessWidget {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  // Icone principale (remplaçable par logo)
-                  const Icon(Icons.sports_soccer, size: 80, color: Colors.white),
-                  const SizedBox(height: 20),
+                  Image.asset(
+                  'assets/images/logo.png', // chemin vers ton logo
+                  width: 250,  // tu ajustes la taille
+                  height: 250,
+                  ),
 
                   // Titre de l'app
                   const Text(
-                    'Quiz Foot',
+                    'Tempo',
                     style: TextStyle(
                       fontSize: 46,
                       fontWeight: FontWeight.bold,
@@ -174,7 +176,7 @@ class HomePage extends StatelessWidget {
 
                   // Sous-titre
                   const Text(
-                    'L\'appli pour les vrais fans de foot !',
+                    'Le jeu, dans la tête.',
                     style: TextStyle(fontSize: 24, color: Colors.white70),
                     textAlign: TextAlign.center,
                   ),
@@ -189,7 +191,19 @@ class HomePage extends StatelessWidget {
                       padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 15),
                       textStyle: const TextStyle(fontSize: 22),
                     ),
-                    child: const Text('Commencer le quiz'),
+                    child: const Text('Coup d’œil'),
+                  ),
+                  const SizedBox(height: 20),
+
+                  ElevatedButton(
+                    onPressed: () {
+                      Navigator.pushNamed(context, '/qui_a_menti');
+                    },
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 15),
+                      textStyle: const TextStyle(fontSize: 22),
+                    ),
+                    child: const Text('Qui a menti ?'),
                   ),
                   const SizedBox(height: 20),
 
