@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:quiz_foot/data/qui_a_menti_api.dart';
 
 /// Modèle minimal pour un "candidat" à classer.
 class Candidate {
@@ -6,6 +7,13 @@ class Candidate {
   final bool isTrueForClaim; // Indique si (selon nos données) l'affirmation est vraie pour ce joueur
 
   Candidate({required this.name, required this.isTrueForClaim});
+
+  factory Candidate.fromJson(Map<String, dynamic> json) {
+    return Candidate(
+      name: json['name'] ?? 'Inconnu',
+      isTrueForClaim: json['isTrue']?.toString().toLowerCase() == 'true',
+    );
+  }
 }
 
 /// Page de jeu "Qui a menti ?"
@@ -19,32 +27,40 @@ class QuiAMentiPage extends StatefulWidget {
 class _QuiAMentiPageState extends State<QuiAMentiPage> {
   final String claim = "J'ai marqué plus de 100 buts en Ligue 1";
 
-  final List<Candidate> _allCandidates = [
-    Candidate(name: "Kylian Mbappé", isTrueForClaim: true),
-    Candidate(name: "Edinson Cavani", isTrueForClaim: true),
-    Candidate(name: "Wissam Ben Yedder", isTrueForClaim: true),
-    Candidate(name: "Delio Onnis", isTrueForClaim: true),
-    Candidate(name: "Bernard Lacombe", isTrueForClaim: true),
-    Candidate(name: "Lionel Messi", isTrueForClaim: false),
-    Candidate(name: "Cristiano Ronaldo", isTrueForClaim: false),
-    Candidate(name: "Andrés Iniesta", isTrueForClaim: false),
-    Candidate(name: "Paul Pogba", isTrueForClaim: false),
-    Candidate(name: "Mohamed Salah", isTrueForClaim: false),
-  ];
-
+  List<Candidate> _allCandidates = [];
   late List<Candidate> _toClassify;
   final List<Candidate> _trueBucket = [];
   final List<Candidate> _falseBucket = [];
+  bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
-    _toClassify = List<Candidate>.from(_allCandidates);
+    _loadCandidates();
+  }
+
+  Future<void> _loadCandidates() async {
+    try {
+      final candidatesJson = await QuiAMentiApi.fetchClaims();
+      final candidates = candidatesJson.map((json) => Candidate.fromJson(json)).toList();
+
+      setState(() {
+        _allCandidates = candidates;
+        _toClassify = List<Candidate>.from(_allCandidates);
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _isLoading = false;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Erreur lors du chargement des candidats : $e")),
+      );
+    }
   }
 
   void _moveCandidate(Candidate c, List<Candidate> target) {
-    // Limite max de 5 cartes par bucket
-    if (target.length >= 5) return;
+    if (target.length >= 5) return; // Limite max de 5 cartes
 
     setState(() {
       _toClassify.remove(c);
@@ -213,58 +229,60 @@ class _QuiAMentiPageState extends State<QuiAMentiPage> {
         centerTitle: true,
       ),
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(12),
-          child: Column(
-            children: [
-              Card(
-                color: Colors.amber.shade100,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                child: Padding(
-                  padding: const EdgeInsets.all(14),
-                  child: Row(
-                    children: [
-                      const Icon(Icons.campaign, size: 26),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: Text(
-                          claim,
-                          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(height: 10),
-              Expanded(
+        child: _isLoading
+            ? const Center(child: CircularProgressIndicator())
+            : Padding(
+                padding: const EdgeInsets.all(12),
                 child: Column(
                   children: [
-                    Expanded(
-                      child: Row(
-                        children: [
-                          Expanded(child: _dropZone(title: "✅ VRAI", bucket: _trueBucket)),
-                          Expanded(child: _dropZone(title: "❌ FAUX", bucket: _falseBucket)),
-                        ],
+                    Card(
+                      color: Colors.amber.shade100,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      child: Padding(
+                        padding: const EdgeInsets.all(14),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.campaign, size: 26),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Text(
+                                claim,
+                                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                     const SizedBox(height: 10),
-                    _toClassifyColumn(),
+                    Expanded(
+                      child: Column(
+                        children: [
+                          Expanded(
+                            child: Row(
+                              children: [
+                                Expanded(child: _dropZone(title: "✅ VRAI", bucket: _trueBucket)),
+                                Expanded(child: _dropZone(title: "❌ FAUX", bucket: _falseBucket)),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 10),
+                          _toClassifyColumn(),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    ElevatedButton(
+                      onPressed: _validate,
+                      style: ElevatedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                      child: const Text("Valider", style: TextStyle(fontSize: 18)),
+                    ),
                   ],
                 ),
               ),
-              const SizedBox(height: 12),
-              ElevatedButton(
-                onPressed: _validate,
-                style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                ),
-                child: const Text("Valider", style: TextStyle(fontSize: 18)),
-              ),
-            ],
-          ),
-        ),
       ),
     );
   }
