@@ -1,3 +1,4 @@
+import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:quiz_foot/data/qui_a_menti_api.dart';
 
@@ -25,7 +26,7 @@ class QuiAMentiPage extends StatefulWidget {
 }
 
 class _QuiAMentiPageState extends State<QuiAMentiPage> {
-  final String claim = "J'ai marqué plus de 100 buts en Ligue 1";
+  String claim = ""; // <-- claim désormais chargé dynamiquement
 
   List<Candidate> _allCandidates = [];
   late List<Candidate> _toClassify;
@@ -40,24 +41,45 @@ class _QuiAMentiPageState extends State<QuiAMentiPage> {
   }
 
   Future<void> _loadCandidates() async {
-    try {
-      final candidatesJson = await QuiAMentiApi.fetchClaims();
-      final candidates = candidatesJson.map((json) => Candidate.fromJson(json)).toList();
+  try {
+    // On récupère tous les claims
+    final claims = await QuiAMentiApi.fetchRandomClaim();
 
-      setState(() {
-        _allCandidates = candidates;
-        _toClassify = List<Candidate>.from(_allCandidates);
-        _isLoading = false;
-      });
-    } catch (e) {
-      setState(() {
-        _isLoading = false;
-      });
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Erreur lors du chargement des candidats : $e")),
-      );
+    if (claims.isEmpty) {
+      throw Exception("Aucun claim trouvé.");
     }
+
+    // Claim aléatoire
+    final rnd = Random();
+    final picked = claims[rnd.nextInt(claims.length)];
+
+    // Construction des 10 candidats
+    final candidates = picked.candidates
+        .map((p) => Candidate(name: p.name, isTrueForClaim: p.isTrue))
+        .toList();
+
+    if (candidates.length != 10) {
+      throw Exception("Le claim sélectionné ne contient pas exactement 10 joueurs (trouvés: ${candidates.length}).");
+    }
+
+    setState(() {
+      claim = picked.claim;
+      _allCandidates = candidates;
+      _toClassify = List<Candidate>.from(_allCandidates);
+      _trueBucket.clear();
+      _falseBucket.clear();
+      _isLoading = false;
+    });
+  } catch (e) {
+    setState(() {
+      _isLoading = false;
+    });
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text("Erreur lors du chargement des candidats : $e")),
+    );
   }
+}
+
 
   void _moveCandidate(Candidate c, List<Candidate> target) {
     if (target.length >= 5) return; // Limite max de 5 cartes
@@ -137,47 +159,48 @@ class _QuiAMentiPageState extends State<QuiAMentiPage> {
   }
 
   Widget _toClassifyColumn() {
-    return DragTarget<Candidate>(
-      onWillAccept: (_) => true,
-      onAccept: (candidate) {
-        setState(() {
-          _trueBucket.remove(candidate);
-          _falseBucket.remove(candidate);
-          if (!_toClassify.contains(candidate)) {
-            _toClassify.add(candidate);
-          }
-        });
-      },
-      builder: (context, candidateData, rejected) {
-        return Container(
-          padding: const EdgeInsets.all(10),
-          margin: const EdgeInsets.symmetric(horizontal: 6),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.black12, width: 1.2),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                "À classer",
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 6),
-              Wrap(
-                spacing: 6,
-                runSpacing: 6,
-                children: [
-                  for (final c in _toClassify) _draggableCard(c),
-                ],
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
+  return DragTarget<Candidate>(
+    onWillAccept: (_) => true,
+    onAccept: (candidate) {
+      setState(() {
+        _trueBucket.remove(candidate);
+        _falseBucket.remove(candidate);
+        if (!_toClassify.contains(candidate)) {
+          _toClassify.add(candidate);
+        }
+      });
+    },
+    builder: (context, candidateData, rejected) {
+      return Container(
+        padding: const EdgeInsets.all(10),
+        margin: const EdgeInsets.symmetric(horizontal: 6),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.black12, width: 1.2),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              "À classer",
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 6),
+            Wrap(
+              spacing: 6,
+              runSpacing: 6,
+              children: [
+                for (final c in _toClassify) _draggableCard(c),
+              ],
+            ),
+          ],
+        ),
+      );
+    },
+  );
+}
+
 
   void _validate() {
     if (_trueBucket.length != 5 || _falseBucket.length != 5) {
