@@ -66,6 +66,7 @@ class _QuiAMentiPageState extends State<QuiAMentiPage> {
       claim = picked.claim;
       _allCandidates = candidates;
       _toClassify = List<Candidate>.from(_allCandidates);
+      _toClassify.shuffle();
       _trueBucket.clear();
       _falseBucket.clear();
       _isLoading = false;
