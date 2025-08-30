@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:diacritic/diacritic.dart';
 import '../models/player.dart';
 import '../data/players_data.dart';
+
 
 class QuizTest extends StatefulWidget {
   const QuizTest({super.key});
@@ -89,25 +91,48 @@ class _QuizTestState extends State<QuizTest> {
     super.dispose();
   }
 
-  void _submitAnswer() {
-    final trimmedAnswer = _answer.trim().toLowerCase();
-    final correctAnswer = _selectedPlayers[_currentQuestion].name.toLowerCase();
+  
 
-    if (trimmedAnswer == correctAnswer) {
-      _score++;
-    }
+    void _submitAnswer() {
+  // Normalisation pour ignorer les accents et la casse
+  final trimmedAnswer = removeDiacritics(_answer.trim().toLowerCase());
+  final correctAnswer = removeDiacritics(_selectedPlayers[_currentQuestion].name.toLowerCase());
 
-    _controller.clear();
-
-    if (_currentQuestion < _selectedPlayers.length - 1) {
-      setState(() {
-        _currentQuestion++;
-        _answer = '';
-      });
-    } else {
-      _showScorePage();
-    }
+  // Vérifie si la réponse est correcte
+  bool isCorrect = trimmedAnswer == correctAnswer;
+  if (isCorrect) {
+    _score++;
   }
+
+  // Réinitialise le champ de saisie
+  _controller.clear();
+
+  // Affiche un message à l'utilisateur
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(
+      content: Text(
+        isCorrect
+            ? '✅ Bonne réponse !'
+            : '❌ Mauvaise réponse ! La bonne réponse était : ${_selectedPlayers[_currentQuestion].name}',
+        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+      ),
+      backgroundColor: isCorrect ? Colors.green[700] : Colors.red[700],
+      behavior: SnackBarBehavior.floating,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      duration: const Duration(seconds: 2),
+    ),
+  );
+
+  // Passe à la question suivante ou affiche la page de score
+  if (_currentQuestion < _selectedPlayers.length - 1) {
+    setState(() {
+      _currentQuestion++;
+      _answer = '';
+    });
+  } else {
+    _showScorePage();
+  }
+}
 
   Future<void> _saveResult(int score, int total, Duration timeTaken) async {
     final prefs = await SharedPreferences.getInstance();
