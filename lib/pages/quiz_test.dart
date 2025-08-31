@@ -50,27 +50,27 @@ class _QuizTestState extends State<QuizTest> {
 
   // 2 joueurs level 4 ou 5
   for (int i = 0; i < 2; i++) {
-    final player = _pickRandomPlayer(remainingPlayers, [4, 5]);
+    final player = _pickRandomPlayer(remainingPlayers, [3, 4]);
     selected.add(player);
     remainingPlayers.remove(player);
   }
 
   // 2 joueurs level 6 ou 7
   for (int i = 0; i < 2; i++) {
-    final player = _pickRandomPlayer(remainingPlayers, [6, 7]);
+    final player = _pickRandomPlayer(remainingPlayers, [4, 5]);
     selected.add(player);
     remainingPlayers.remove(player);
   }
 
   // 2 joueurs level 8 ou 9
   for (int i = 0; i < 2; i++) {
-    final player = _pickRandomPlayer(remainingPlayers, [8, 9]);
+    final player = _pickRandomPlayer(remainingPlayers, [6, 7, 8]);
     selected.add(player);
     remainingPlayers.remove(player);
   }
 
   // 1 joueur level 10
-  selected.add(_pickRandomPlayer(remainingPlayers, [10]));
+  selected.add(_pickRandomPlayer(remainingPlayers, [9, 10]));
   remainingPlayers.remove(selected.last);
 
   for (var p in selected) {
@@ -225,22 +225,32 @@ class _QuizTestState extends State<QuizTest> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         SizedBox(
-          height: 250,
-          width: double.infinity,
-          child: Image.network(
-            currentPlayer.imageUrl,
-            fit: BoxFit.contain,
-            loadingBuilder: (context, child, loadingProgress) {
-              if (loadingProgress == null) return child;
-              return const Center(child: CircularProgressIndicator());
-            },
-            errorBuilder: (context, error, stackTrace) {
-              return const Center(
-                child: Icon(Icons.broken_image, size: 80, color: Colors.grey),
-              );
-            },
-          ),
-        ),
+  height: 250,
+  width: double.infinity,
+  child: Card(
+    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+    elevation: 6,
+    clipBehavior: Clip.antiAlias,
+    child: InteractiveViewer(
+      minScale: 0.8,
+      maxScale: 4.0,
+      panEnabled: true,
+      child: Image.network(
+        currentPlayer.imageUrl,
+        fit: BoxFit.cover,
+        loadingBuilder: (context, child, loadingProgress) {
+          if (loadingProgress == null) return child;
+          return const Center(child: CircularProgressIndicator());
+        },
+        errorBuilder: (context, error, stackTrace) {
+          return const Center(
+            child: Icon(Icons.broken_image, size: 80, color: Colors.grey),
+          );
+        },
+      ),
+    ),
+  ),
+),
         const SizedBox(height: 16),
         Expanded(
           child: SingleChildScrollView(
@@ -248,19 +258,29 @@ class _QuizTestState extends State<QuizTest> {
             child: Column(
               children: [
                 TextField(
-                  autofocus: true,
-                  controller: _controller,
-                  decoration: const InputDecoration(
-                    labelText: 'Quel joueur est-ce ?',
-                    border: OutlineInputBorder(),
-                  ),
-                  onChanged: (value) {
-                    setState(() => _answer = value);
-                  },
-                  onSubmitted: (_) {
-                    if (_answer.trim().isNotEmpty) _submitAnswer();
-                  },
-                ),
+  autofocus: true,
+  controller: _controller,
+  decoration: InputDecoration(
+    labelText: 'Quel joueur est-ce ?',
+    hintText: 'Entre le nom du joueur',
+    prefixIcon: const Icon(Icons.person, color: Colors.grey),
+    filled: true,
+    fillColor: Colors.grey.shade100,
+    border: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(12),
+    ),
+    focusedBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(12),
+      borderSide: BorderSide(color: Theme.of(context).primaryColor, width: 2),
+    ),
+  ),
+  onChanged: (value) {
+    setState(() => _answer = value);
+  },
+  onSubmitted: (_) {
+    if (_answer.trim().isNotEmpty) _submitAnswer();
+  },
+),
                 const SizedBox(height: 20),
                 ElevatedButton(
                   onPressed: _answer.trim().isEmpty ? null : _submitAnswer,
