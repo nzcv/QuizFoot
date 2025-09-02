@@ -225,114 +225,123 @@ class _QuizTestState extends State<QuizTest> {
       );
     }
 
-    final currentPlayer = _selectedPlayers[_currentQuestion];
-
     return Scaffold(
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
         title: Text('Question ${_currentQuestion + 1} / ${_selectedPlayers.length}'),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
       ),
       resizeToAvoidBottomInset: true,
-      body: SafeArea(
-        child: AnimatedSwitcher(
-          duration: const Duration(milliseconds: 300),
-          switchInCurve: Curves.easeOut,
-          switchOutCurve: Curves.easeIn,
-          transitionBuilder: (child, animation) {
-            final slide = Tween<Offset>(
-              begin: const Offset(0.08, 0),
-              end: Offset.zero,
-            ).animate(animation);
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Color(0xff66bb6a), Color(0xff1b5e20)],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+          ),
+        ),
+        child: SafeArea(
+          child: AnimatedSwitcher(
+            duration: const Duration(milliseconds: 300),
+            switchInCurve: Curves.easeOut,
+            switchOutCurve: Curves.easeIn,
+            transitionBuilder: (child, animation) {
+              final slide = Tween<Offset>(
+                begin: const Offset(0.08, 0),
+                end: Offset.zero,
+              ).animate(animation);
 
-            return SlideTransition(
-              position: slide,
-              child: FadeTransition(opacity: animation, child: child),
-            );
-          },
-          child: Column(
-            key: ValueKey(_currentQuestion),
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              SizedBox(
-                height: 250,
-                width: double.infinity,
-                child: Card(
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                  elevation: 6,
-                  clipBehavior: Clip.antiAlias,
-                  child: InteractiveViewer(
-                    minScale: 0.8,
-                    maxScale: 4.0,
-                    panEnabled: true,
-                    child: Image.network(
-                      currentPlayer.imageUrl,
-                      fit: BoxFit.cover,
-                      loadingBuilder: (context, child, loadingProgress) {
-                        if (loadingProgress == null) return child;
-                        return const Center(child: CircularProgressIndicator());
-                      },
-                      errorBuilder: (context, error, stackTrace) {
-                        return const Center(
-                          child: Icon(Icons.broken_image, size: 80, color: Colors.grey),
-                        );
-                      },
+              return SlideTransition(
+                position: slide,
+                child: FadeTransition(opacity: animation, child: child),
+              );
+            },
+            child: Column(
+              key: ValueKey(_currentQuestion),
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                SizedBox(
+                  height: 250,
+                  width: double.infinity,
+                  child: Card(
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                    elevation: 6,
+                    clipBehavior: Clip.antiAlias,
+                    child: InteractiveViewer(
+                      minScale: 0.8,
+                      maxScale: 4.0,
+                      panEnabled: true,
+                      child: Image.network(
+                        _selectedPlayers[_currentQuestion].imageUrl,
+                        fit: BoxFit.cover,
+                        loadingBuilder: (context, child, loadingProgress) {
+                          if (loadingProgress == null) return child;
+                          return const Center(child: CircularProgressIndicator());
+                        },
+                        errorBuilder: (context, error, stackTrace) {
+                          return const Center(
+                            child: Icon(Icons.broken_image, size: 80, color: Colors.grey),
+                          );
+                        },
+                      ),
                     ),
                   ),
                 ),
-              ),
-              const SizedBox(height: 16),
-              Expanded(
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    children: [
-                      TextField(
-                        autofocus: true,
-                        controller: _controller,
-                        decoration: InputDecoration(
-                          labelText: 'Quel joueur est-ce ?',
-                          hintText: 'Entre le nom du joueur',
-                          prefixIcon: const Icon(Icons.person, color: Colors.grey),
-                          filled: true,
-                          fillColor: Colors.grey.shade100,
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
+                const SizedBox(height: 16),
+                Expanded(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      children: [
+                        TextField(
+                          autofocus: true,
+                          controller: _controller,
+                          decoration: InputDecoration(
+                            hintText: 'Entre le nom du joueur',
+                            prefixIcon: const Icon(Icons.person, color: Colors.grey),
+                            filled: true,
+                            fillColor: Colors.grey.shade100,
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide(color: Theme.of(context).primaryColor, width: 2),
+                            ),
                           ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide(color: Theme.of(context).primaryColor, width: 2),
-                          ),
+                          onChanged: (value) {
+                            setState(() => _answer = value);
+                          },
+                          onSubmitted: (_) {
+                            if (_answer.trim().isNotEmpty) _submitAnswer();
+                          },
                         ),
-                        onChanged: (value) {
-                          setState(() => _answer = value);
-                        },
-                        onSubmitted: (_) {
-                          if (_answer.trim().isNotEmpty) _submitAnswer();
-                        },
-                      ),
-                      const SizedBox(height: 20),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: ElevatedButton(
-                              onPressed: _answer.trim().isEmpty ? null : _submitAnswer,
-                              child: const Text('Valider'),
+                        const SizedBox(height: 20),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: ElevatedButton(
+                                onPressed: _answer.trim().isEmpty ? null : _submitAnswer,
+                                child: const Text('Valider'),
+                              ),
                             ),
-                          ),
-                          const SizedBox(width: 16),
-                          Expanded(
-                            child: ElevatedButton(
-                              style: ElevatedButton.styleFrom(backgroundColor: Colors.red[300], foregroundColor: Colors.white,),
-                              onPressed: _skipQuestion,
-                              child: const Text('Passer'),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: ElevatedButton(
+                                style: ElevatedButton.styleFrom(backgroundColor: Colors.red[300], foregroundColor: Colors.white,),
+                                onPressed: _skipQuestion,
+                                child: const Text('Passer'),
+                              ),
                             ),
-                          ),
-                        ],
-                      ),
-                    ],
+                          ],
+                        ),
+                      ],
+                    ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
