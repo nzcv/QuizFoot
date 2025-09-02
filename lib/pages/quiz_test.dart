@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:diacritic/diacritic.dart';
+import 'package:string_similarity/string_similarity.dart';
 import '../models/player.dart';
 import '../data/players_data.dart';
-
 
 class QuizTest extends StatefulWidget {
   const QuizTest({super.key});
@@ -30,60 +30,52 @@ class _QuizTestState extends State<QuizTest> {
   }
 
   Future<void> _loadPlayersAndStartQuiz() async {
-  final players = await loadPlayers();
+    final players = await loadPlayers();
 
-  // On clone la liste pour pouvoir retirer les joueurs déjà sélectionnés
-  final remainingPlayers = List<Player>.from(players);
+    final remainingPlayers = List<Player>.from(players);
+    List<Player> selected = [];
 
-  List<Player> selected = [];
+    selected.add(_pickRandomPlayer(remainingPlayers, [1]));
+    remainingPlayers.remove(selected.last);
 
-  // 1 joueur level 1
-  selected.add(_pickRandomPlayer(remainingPlayers, [1]));
-  remainingPlayers.remove(selected.last);
+    for (int i = 0; i < 2; i++) {
+      final player = _pickRandomPlayer(remainingPlayers, [2, 3]);
+      selected.add(player);
+      remainingPlayers.remove(player);
+    }
 
-  // 2 joueurs level 2 ou 3
-  for (int i = 0; i < 2; i++) {
-    final player = _pickRandomPlayer(remainingPlayers, [2, 3]);
-    selected.add(player);
-    remainingPlayers.remove(player);
+    for (int i = 0; i < 2; i++) {
+      final player = _pickRandomPlayer(remainingPlayers, [3, 4, 5]);
+      selected.add(player);
+      remainingPlayers.remove(player);
+    }
+
+    for (int i = 0; i < 2; i++) {
+      final player = _pickRandomPlayer(remainingPlayers, [4, 5, 6]);
+      selected.add(player);
+      remainingPlayers.remove(player);
+    }
+
+    for (int i = 0; i < 2; i++) {
+      final player = _pickRandomPlayer(remainingPlayers, [6, 7, 8]);
+      selected.add(player);
+      remainingPlayers.remove(player);
+    }
+
+    selected.add(_pickRandomPlayer(remainingPlayers, [8, 9, 10]));
+    remainingPlayers.remove(selected.last);
+
+    for (var p in selected) {
+    print('Joueur : ${p.name}, Level: ${p.level}');
+    }
+
+    setState(() {
+      _players = players;
+      _selectedPlayers = selected;
+      _quizStartTime = DateTime.now();
+      _isLoading = false;
+    });
   }
-
-  // 2 joueurs level 4 ou 5
-  for (int i = 0; i < 2; i++) {
-    final player = _pickRandomPlayer(remainingPlayers, [3, 4]);
-    selected.add(player);
-    remainingPlayers.remove(player);
-  }
-
-  // 2 joueurs level 6 ou 7
-  for (int i = 0; i < 2; i++) {
-    final player = _pickRandomPlayer(remainingPlayers, [4, 5]);
-    selected.add(player);
-    remainingPlayers.remove(player);
-  }
-
-  // 2 joueurs level 8 ou 9
-  for (int i = 0; i < 2; i++) {
-    final player = _pickRandomPlayer(remainingPlayers, [6, 7, 8]);
-    selected.add(player);
-    remainingPlayers.remove(player);
-  }
-
-  // 1 joueur level 10
-  selected.add(_pickRandomPlayer(remainingPlayers, [9, 10]));
-  remainingPlayers.remove(selected.last);
-
-  for (var p in selected) {
-  print('Player: ${p.name}, Level: ${p.level}');
-};
-
-  setState(() {
-    _players = players;
-    _selectedPlayers = selected;
-    _quizStartTime = DateTime.now();
-    _isLoading = false;
-  });
-}
 
   @override
   void dispose() {
@@ -91,48 +83,87 @@ class _QuizTestState extends State<QuizTest> {
     super.dispose();
   }
 
-  
+  // ✅ Modifié uniquement ici
+  void _submitAnswer() {
+    final trimmedAnswer = removeDiacritics(_answer.trim().toLowerCase());
+    final correctAnswer = removeDiacritics(_selectedPlayers[_currentQuestion].name.toLowerCase());
 
-    void _submitAnswer() {
-  // Normalisation pour ignorer les accents et la casse
-  final trimmedAnswer = removeDiacritics(_answer.trim().toLowerCase());
-  final correctAnswer = removeDiacritics(_selectedPlayers[_currentQuestion].name.toLowerCase());
+    double similarity = trimmedAnswer.similarityTo(correctAnswer);
 
-  // Vérifie si la réponse est correcte
-  bool isCorrect = trimmedAnswer == correctAnswer;
-  if (isCorrect) {
-    _score++;
-  }
+    bool isCorrect = similarity == 1.0;
+    bool almostCorrect = !isCorrect && similarity > 0.4;
 
-  // Réinitialise le champ de saisie
-  _controller.clear();
+    if (isCorrect) {
+      _score++;
+    }
 
-  // Affiche un message à l'utilisateur
-  ScaffoldMessenger.of(context).showSnackBar(
-    SnackBar(
-      content: Text(
-        isCorrect
-            ? '✅ Bonne réponse !'
-            : '❌ Mauvaise réponse ! La bonne réponse était : ${_selectedPlayers[_currentQuestion].name}',
-        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+    _controller.clear();
+
+    String snackMessage;
+    Color snackColor;
+
+    if (isCorrect) {
+      snackMessage = '✅ Bonne réponse !';
+      snackColor = Colors.green[700]!;
+    } else if (almostCorrect) {
+      snackMessage =
+          '🟡 T\'y es presque grand...';
+      snackColor = Colors.orange[700]!;
+    } else {
+      snackMessage =
+          '❌ Nan !! T\'es trompé ! La bonne réponse était : ${_selectedPlayers[_currentQuestion].name}';
+      snackColor = Colors.red[700]!;
+    }
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          snackMessage,
+          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+        ),
+        backgroundColor: snackColor,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        duration: const Duration(seconds: 2),
       ),
-      backgroundColor: isCorrect ? Colors.green[700] : Colors.red[700],
-      behavior: SnackBarBehavior.floating,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      duration: const Duration(seconds: 2),
-    ),
-  );
+    );
 
-  // Passe à la question suivante ou affiche la page de score
-  if (_currentQuestion < _selectedPlayers.length - 1) {
-    setState(() {
-      _currentQuestion++;
-      _answer = '';
-    });
-  } else {
-    _showScorePage();
+    if (isCorrect || !almostCorrect) {
+      _nextQuestion();
+    }
   }
-}
+
+  void _nextQuestion() {
+    if (_currentQuestion < _selectedPlayers.length - 1) {
+      setState(() {
+        _currentQuestion++;
+        _answer = '';
+      });
+    } else {
+      _showScorePage();
+    }
+  }
+
+  void _skipQuestion() {
+    _controller.clear();
+
+    String correctAnswer = _selectedPlayers[_currentQuestion].name;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          '⏩ Question passée ! La bonne réponse était : $correctAnswer',
+          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+        ),
+        backgroundColor: Colors.red[700],
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        duration: const Duration(seconds: 2),
+      ),
+    );
+
+    _nextQuestion();
+  }
 
   Future<void> _saveResult(int score, int total, Duration timeTaken) async {
     final prefs = await SharedPreferences.getInstance();
@@ -171,20 +202,18 @@ class _QuizTestState extends State<QuizTest> {
   }
 
   Player _pickRandomPlayer(List<Player> players, List<int> levels) {
-  final filtered = players.where((p) => levels.contains(p.level)).toList();
-  if (filtered.isEmpty) {
-    // Si aucun joueur dans ce niveau, on cherche dans le niveau supérieur
-    final maxLevel = players.map((p) => p.level).reduce((a, b) => a > b ? a : b);
-    for (int lvl in levels) {
-      if (lvl < maxLevel) {
-        return _pickRandomPlayer(players, [lvl + 1]);
+    final filtered = players.where((p) => levels.contains(p.level)).toList();
+    if (filtered.isEmpty) {
+      final maxLevel = players.map((p) => p.level).reduce((a, b) => a > b ? a : b);
+      for (int lvl in levels) {
+        if (lvl < maxLevel) {
+          return _pickRandomPlayer(players, [lvl + 1]);
+        }
       }
+      return players[(players.length * (0.5)).toInt()];
     }
-    // fallback : on prend un joueur au hasard
-    return players[(players.length * (0.5)).toInt()]; 
-  }
-  filtered.shuffle();
-  return filtered.first;
+    filtered.shuffle();
+    return filtered.first;
   }
 
   @override
@@ -199,102 +228,115 @@ class _QuizTestState extends State<QuizTest> {
     final currentPlayer = _selectedPlayers[_currentQuestion];
 
     return Scaffold(
-  appBar: AppBar(
-    title: Text('Question ${_currentQuestion + 1} / ${_selectedPlayers.length}'),
-  ),
-  resizeToAvoidBottomInset: true,
-  body: SafeArea(
-  child: AnimatedSwitcher(
-    duration: const Duration(milliseconds: 300),
-    switchInCurve: Curves.easeOut,
-    switchOutCurve: Curves.easeIn,
-    transitionBuilder: (child, animation) {
-      final slide = Tween<Offset>(
-        begin: const Offset(0.08, 0), // léger slide depuis la droite
-        end: Offset.zero,
-      ).animate(animation);
-
-      return SlideTransition(
-        position: slide,
-        child: FadeTransition(opacity: animation, child: child),
-      );
-    },
-    // IMPORTANT : la clé doit changer quand _currentQuestion change
-    child: Column(
-      key: ValueKey(_currentQuestion),
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        SizedBox(
-  height: 250,
-  width: double.infinity,
-  child: Card(
-    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-    elevation: 6,
-    clipBehavior: Clip.antiAlias,
-    child: InteractiveViewer(
-      minScale: 0.8,
-      maxScale: 4.0,
-      panEnabled: true,
-      child: Image.network(
-        currentPlayer.imageUrl,
-        fit: BoxFit.cover,
-        loadingBuilder: (context, child, loadingProgress) {
-          if (loadingProgress == null) return child;
-          return const Center(child: CircularProgressIndicator());
-        },
-        errorBuilder: (context, error, stackTrace) {
-          return const Center(
-            child: Icon(Icons.broken_image, size: 80, color: Colors.grey),
-          );
-        },
+      appBar: AppBar(
+        title: Text('Question ${_currentQuestion + 1} / ${_selectedPlayers.length}'),
       ),
-    ),
-  ),
-),
-        const SizedBox(height: 16),
-        Expanded(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              children: [
-                TextField(
-  autofocus: true,
-  controller: _controller,
-  decoration: InputDecoration(
-    labelText: 'Quel joueur est-ce ?',
-    hintText: 'Entre le nom du joueur',
-    prefixIcon: const Icon(Icons.person, color: Colors.grey),
-    filled: true,
-    fillColor: Colors.grey.shade100,
-    border: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(12),
-    ),
-    focusedBorder: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(12),
-      borderSide: BorderSide(color: Theme.of(context).primaryColor, width: 2),
-    ),
-  ),
-  onChanged: (value) {
-    setState(() => _answer = value);
-  },
-  onSubmitted: (_) {
-    if (_answer.trim().isNotEmpty) _submitAnswer();
-  },
-),
-                const SizedBox(height: 20),
-                ElevatedButton(
-                  onPressed: _answer.trim().isEmpty ? null : _submitAnswer,
-                  child: const Text('Valider'),
+      resizeToAvoidBottomInset: true,
+      body: SafeArea(
+        child: AnimatedSwitcher(
+          duration: const Duration(milliseconds: 300),
+          switchInCurve: Curves.easeOut,
+          switchOutCurve: Curves.easeIn,
+          transitionBuilder: (child, animation) {
+            final slide = Tween<Offset>(
+              begin: const Offset(0.08, 0),
+              end: Offset.zero,
+            ).animate(animation);
+
+            return SlideTransition(
+              position: slide,
+              child: FadeTransition(opacity: animation, child: child),
+            );
+          },
+          child: Column(
+            key: ValueKey(_currentQuestion),
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              SizedBox(
+                height: 250,
+                width: double.infinity,
+                child: Card(
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  elevation: 6,
+                  clipBehavior: Clip.antiAlias,
+                  child: InteractiveViewer(
+                    minScale: 0.8,
+                    maxScale: 4.0,
+                    panEnabled: true,
+                    child: Image.network(
+                      currentPlayer.imageUrl,
+                      fit: BoxFit.cover,
+                      loadingBuilder: (context, child, loadingProgress) {
+                        if (loadingProgress == null) return child;
+                        return const Center(child: CircularProgressIndicator());
+                      },
+                      errorBuilder: (context, error, stackTrace) {
+                        return const Center(
+                          child: Icon(Icons.broken_image, size: 80, color: Colors.grey),
+                        );
+                      },
+                    ),
+                  ),
                 ),
-              ],
-            ),
+              ),
+              const SizedBox(height: 16),
+              Expanded(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    children: [
+                      TextField(
+                        autofocus: true,
+                        controller: _controller,
+                        decoration: InputDecoration(
+                          labelText: 'Quel joueur est-ce ?',
+                          hintText: 'Entre le nom du joueur',
+                          prefixIcon: const Icon(Icons.person, color: Colors.grey),
+                          filled: true,
+                          fillColor: Colors.grey.shade100,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(color: Theme.of(context).primaryColor, width: 2),
+                          ),
+                        ),
+                        onChanged: (value) {
+                          setState(() => _answer = value);
+                        },
+                        onSubmitted: (_) {
+                          if (_answer.trim().isNotEmpty) _submitAnswer();
+                        },
+                      ),
+                      const SizedBox(height: 20),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: ElevatedButton(
+                              onPressed: _answer.trim().isEmpty ? null : _submitAnswer,
+                              child: const Text('Valider'),
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: ElevatedButton(
+                              style: ElevatedButton.styleFrom(backgroundColor: Colors.red[300], foregroundColor: Colors.white,),
+                              onPressed: _skipQuestion,
+                              child: const Text('Passer'),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
-      ],
-    ),
-  ),
-),
-);
+      ),
+    );
   }
 }
 
