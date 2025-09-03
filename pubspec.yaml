@@ -29,7 +29,10 @@ flutter:
     - assets/players.json
     - assets/images/ball.png
     - assets/images/logo.png
-    - assets/images/logo_app.png   # 👈 ajouté ton logo ici pour être sûr qu’il soit reconnu
+    - assets/images/logo_app.png
+    - assets/images/correct.jpg
+    - assets/images/wrong.jpg
+
   uses-material-design: true
   fonts:
     - family: Oswald

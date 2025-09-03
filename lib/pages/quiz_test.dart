@@ -23,6 +23,9 @@ class _QuizTestState extends State<QuizTest> {
   DateTime? _quizStartTime;
   bool _isLoading = true;
 
+  final String _memeCorrect = 'assets/images/correct.jpg';
+  final String _memeWrong = 'assets/images/wrong.jpg';
+
   @override
   void initState() {
     super.initState();
@@ -84,7 +87,7 @@ class _QuizTestState extends State<QuizTest> {
   }
 
   // ✅ Modifié uniquement ici
-  void _submitAnswer() {
+  Future<void> _submitAnswer() async {
     final trimmedAnswer = removeDiacritics(_answer.trim().toLowerCase());
     final correctAnswer = removeDiacritics(_selectedPlayers[_currentQuestion].name.toLowerCase());
 
@@ -101,34 +104,84 @@ class _QuizTestState extends State<QuizTest> {
 
     String snackMessage;
     Color snackColor;
+    String memeAsset;
 
     if (isCorrect) {
-      snackMessage = '✅ Bonne réponse !';
+      snackMessage = '✅ Bonne réponse ! Suuuuuuuuu !!';
       snackColor = Colors.green[700]!;
+      memeAsset = _memeCorrect;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              Image.asset(memeAsset, width: 80, height: 80, fit: BoxFit.cover),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  snackMessage,
+                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                ),
+              ),
+            ],
+          ),
+          backgroundColor: snackColor,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          duration: const Duration(seconds: 2),
+        ),
+      );
+      _nextQuestion();
     } else if (almostCorrect) {
       snackMessage =
           '🟡 T\'y es presque grand...';
       snackColor = Colors.orange[700]!;
+      memeAsset = _memeWrong;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  snackMessage,
+                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                ),
+              ),
+            ],
+          ),
+          backgroundColor: snackColor,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          duration: const Duration(seconds: 2),
+        ),
+      );
     } else {
       snackMessage =
           '❌ Nan !! T\'es trompé ! La bonne réponse était : ${_selectedPlayers[_currentQuestion].name}';
       snackColor = Colors.red[700]!;
-    }
+      memeAsset = _memeWrong;
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          snackMessage,
-          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              Image.asset(memeAsset, width: 80, height: 80, fit: BoxFit.cover),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  snackMessage,
+                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                ),
+              ),
+            ],
+          ),
+          backgroundColor: snackColor,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          duration: const Duration(seconds: 2),
         ),
-        backgroundColor: snackColor,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        duration: const Duration(seconds: 2),
-      ),
-    );
-
-    if (isCorrect || !almostCorrect) {
+      );
       _nextQuestion();
     }
   }
@@ -151,9 +204,16 @@ class _QuizTestState extends State<QuizTest> {
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(
-          '⏩ Question passée ! La bonne réponse était : $correctAnswer',
-          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+        content: Row(
+          children: [
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                '⏩ Question passée ! La bonne réponse était : $correctAnswer',
+                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              ),
+            ),
+          ],
         ),
         backgroundColor: Colors.red[700],
         behavior: SnackBarBehavior.floating,
@@ -322,16 +382,16 @@ class _QuizTestState extends State<QuizTest> {
                           children: [
                             Expanded(
                               child: ElevatedButton(
-                                onPressed: _answer.trim().isEmpty ? null : _submitAnswer,
-                                child: const Text('Valider'),
+                                style: ElevatedButton.styleFrom(backgroundColor: Colors.red[300], foregroundColor: Colors.white,),
+                                onPressed: _skipQuestion,
+                                child: const Text('Passer'),
                               ),
                             ),
                             const SizedBox(width: 16),
                             Expanded(
                               child: ElevatedButton(
-                                style: ElevatedButton.styleFrom(backgroundColor: Colors.red[300], foregroundColor: Colors.white,),
-                                onPressed: _skipQuestion,
-                                child: const Text('Passer'),
+                                onPressed: _answer.trim().isEmpty ? null : _submitAnswer,
+                                child: const Text('Valider'),
                               ),
                             ),
                           ],
