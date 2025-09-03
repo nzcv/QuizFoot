@@ -207,7 +207,18 @@ class HomePage extends StatelessWidget {
                   ),
                   const SizedBox(height: 20),
 
-                  // Bouton pour voir les résultats
+                  ElevatedButton(
+                    onPressed: () {
+                      Navigator.pushNamed(context, '/parcours_joueur'); // route pour ton nouveau jeu
+                    },
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 15),
+                      textStyle: const TextStyle(fontSize: 22),
+                    ),
+                    child: const Text('Parcours Joueur'),
+                    ),
+                  const SizedBox(height: 20),
+
                   ElevatedButton(
                     onPressed: () {
                       Navigator.pushNamed(context, '/history_page');

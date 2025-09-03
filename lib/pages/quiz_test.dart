@@ -127,7 +127,7 @@ class _QuizTestState extends State<QuizTest> {
           backgroundColor: snackColor,
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          duration: const Duration(seconds: 2),
+          duration: const Duration(seconds: 3),
         ),
       );
       _nextQuestion();
@@ -153,7 +153,7 @@ class _QuizTestState extends State<QuizTest> {
           backgroundColor: snackColor,
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          duration: const Duration(seconds: 2),
+          duration: const Duration(seconds: 3),
         ),
       );
     } else {
@@ -179,7 +179,7 @@ class _QuizTestState extends State<QuizTest> {
           backgroundColor: snackColor,
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          duration: const Duration(seconds: 2),
+          duration: const Duration(seconds: 3),
         ),
       );
       _nextQuestion();
@@ -218,7 +218,7 @@ class _QuizTestState extends State<QuizTest> {
         backgroundColor: Colors.red[700],
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        duration: const Duration(seconds: 2),
+        duration: const Duration(seconds: 3),
       ),
     );
 
