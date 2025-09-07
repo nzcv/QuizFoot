@@ -6,11 +6,42 @@ import '../models/player.dart';
 import '../data/players_data.dart';
 
 class QuizTest extends StatefulWidget {
-  const QuizTest({super.key});
+  final String difficulty;
+  const QuizTest({super.key, required this.difficulty});
 
   @override
   State<QuizTest> createState() => _QuizTestState();
 }
+
+final Map<String, List<Map<int, int>>> difficultyPlans = {
+  "Très Facile": [
+    {1: 6},
+    {2: 4},
+  ],
+  "Facile": [
+    {1: 1},
+    {2: 5},
+    {3: 3},
+    {4: 1},
+  ],
+  "Moyenne": [
+    {3: 3},
+    {4: 3},
+    {5: 4},
+  ],
+  "Difficile": [
+    {4: 1},
+    {5: 3},
+    {6: 3},
+    {7: 2},
+    {8: 1},
+  ],
+  "Impossible": [
+    {8: 2},
+    {9: 4},
+    {10: 4},
+  ],
+};
 
 class _QuizTestState extends State<QuizTest> {
   List<Player> _players = [];
@@ -38,40 +69,21 @@ class _QuizTestState extends State<QuizTest> {
     final remainingPlayers = List<Player>.from(players);
     List<Player> selected = [];
 
-    selected.add(_pickRandomPlayer(remainingPlayers, [1]));
-    remainingPlayers.remove(selected.last);
+    final plan = difficultyPlans[widget.difficulty] ?? [];
 
-    for (int i = 0; i < 2; i++) {
-      final player = _pickRandomPlayer(remainingPlayers, [2, 3]);
-      selected.add(player);
-      remainingPlayers.remove(player);
+    for (var step in plan) {
+      step.forEach((level, count) {
+        for (int i = 0; i < count; i++) {
+          final player = _pickRandomPlayer(remainingPlayers, [level]);
+          selected.add(player);
+          remainingPlayers.remove(player);
+        }
+      });
     }
-
-    for (int i = 0; i < 2; i++) {
-      final player = _pickRandomPlayer(remainingPlayers, [3, 4, 5]);
-      selected.add(player);
-      remainingPlayers.remove(player);
-    }
-
-    for (int i = 0; i < 2; i++) {
-      final player = _pickRandomPlayer(remainingPlayers, [4, 5, 6]);
-      selected.add(player);
-      remainingPlayers.remove(player);
-    }
-
-    for (int i = 0; i < 2; i++) {
-      final player = _pickRandomPlayer(remainingPlayers, [6, 7, 8]);
-      selected.add(player);
-      remainingPlayers.remove(player);
-    }
-
-    selected.add(_pickRandomPlayer(remainingPlayers, [8, 9, 10]));
-    remainingPlayers.remove(selected.last);
 
     for (var p in selected) {
-    print('Joueur : ${p.name}, Level: ${p.level}');
+      print('Player: ${p.name}, Level: ${p.level}');
     }
-
     setState(() {
       _players = players;
       _selectedPlayers = selected;
@@ -100,13 +112,12 @@ class _QuizTestState extends State<QuizTest> {
       _score++;
     }
 
-    _controller.clear();
-
     String snackMessage;
     Color snackColor;
     String memeAsset;
 
     if (isCorrect) {
+      _controller.clear();
       snackMessage = '✅ Bonne réponse ! Suuuuuuuuu !!';
       snackColor = Colors.green[700]!;
       memeAsset = _memeCorrect;
@@ -157,6 +168,7 @@ class _QuizTestState extends State<QuizTest> {
         ),
       );
     } else {
+      _controller.clear();
       snackMessage =
           '❌ Nan !! T\'es trompé ! La bonne réponse était : ${_selectedPlayers[_currentQuestion].name}';
       snackColor = Colors.red[700]!;

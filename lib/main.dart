@@ -33,7 +33,7 @@ class MyApp extends StatelessWidget {
       initialRoute: '/',
       routes: {
         '/': (context) => const HomePage(),
-        '/quiz_test': (context) => const QuizTest(),
+        '/quiz_test': (context) => QuizTest(difficulty: 'Moyenne'),
         '/result_page': (context) => const ResultPage(score: 0),
         '/history_page': (context) => const HistoryPage(),
         '/qui_a_menti': (context) => const QuiAMentiPage(),

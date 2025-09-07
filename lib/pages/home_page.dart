@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'dart:math';
 import 'dart:ui' as ui;
 import 'package:flutter/services.dart';
+import 'package:quiz_foot/pages/quiz_test.dart';
 
 // =======================
 // WIDGET DE FOND ANIMÉ
@@ -97,6 +98,43 @@ class Ball {
   Ball({required this.x, required this.y, required this.radius, required this.speed});
 }
 
+void _showDifficultyDialog(BuildContext context) {
+  showDialog(
+    context: context,
+    builder: (context) {
+      return AlertDialog(
+        title: const Text("Choisis la difficulté"),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _difficultyButton(context, "Très Facile"),
+            _difficultyButton(context, "Facile"),
+            _difficultyButton(context, "Moyenne"),
+            _difficultyButton(context, "Difficile"),
+            _difficultyButton(context, "Impossible"),
+          ],
+        ),
+      );
+    },
+  );
+}
+
+Widget _difficultyButton(BuildContext context, String difficulty) {
+  return Padding(
+    padding: const EdgeInsets.symmetric(vertical: 4.0),
+    child: ElevatedButton(
+      onPressed: () {
+        Navigator.pop(context); // ferme le popup
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => QuizTest(difficulty: difficulty)),
+        );
+      },
+      child: Text(difficulty),
+    ),
+  );
+}
+
 // =======================
 // PAINTER DES BALLES
 // =======================
@@ -185,7 +223,7 @@ class HomePage extends StatelessWidget {
                   // Bouton pour commencer le quiz
                   ElevatedButton(
                     onPressed: () {
-                      Navigator.pushNamed(context, '/quiz_test');
+                      _showDifficultyDialog(context);
                     },
                     style: ElevatedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 15),
@@ -209,7 +247,7 @@ class HomePage extends StatelessWidget {
 
                   ElevatedButton(
                     onPressed: () {
-                      Navigator.pushNamed(context, '/parcours_joueur'); // route pour ton nouveau jeu
+                      Navigator.pushNamed(context, '/parcours_joueur');
                     },
                     style: ElevatedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 15),
