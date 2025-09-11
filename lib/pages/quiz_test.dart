@@ -15,8 +15,8 @@ class QuizTest extends StatefulWidget {
 
 final Map<String, List<Map<int, int>>> difficultyPlans = {
   "Très Facile": [
-    {1: 6},
-    {2: 4},
+    {1: 8},
+    {2: 2},
   ],
   "Facile": [
     {1: 1},

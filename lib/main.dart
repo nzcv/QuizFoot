@@ -5,6 +5,7 @@ import 'pages/result_page.dart';
 import 'pages/history_page.dart';
 import 'pages/qui_a_menti.dart';
 import 'pages/parcours_joueur_page.dart';
+import 'pages/lineup_match_page.dart';
 
 void main() {
   runApp(const MyApp());
@@ -38,6 +39,7 @@ class MyApp extends StatelessWidget {
         '/history_page': (context) => const HistoryPage(),
         '/qui_a_menti': (context) => const QuiAMentiPage(),
         '/parcours_joueur': (context) => const ParcoursJoueurPage(),
+        '/lineup_match': (context) => const LineupMatchPage(),
       },
     );
   }

@@ -3,6 +3,7 @@ import 'dart:math';
 import 'dart:ui' as ui;
 import 'package:flutter/services.dart';
 import 'package:quiz_foot/pages/quiz_test.dart';
+import 'lineup_match_page.dart';
 
 // =======================
 // WIDGET DE FOND ANIMÉ
@@ -255,6 +256,20 @@ class HomePage extends StatelessWidget {
                     ),
                     child: const Text('Parcours Joueur'),
                     ),
+
+                  const SizedBox(height: 20),
+
+                  ElevatedButton(
+                    onPressed: () {
+                        Navigator.pushNamed(context, '/lineup_match');
+                    },
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 15),
+                      textStyle: const TextStyle(fontSize: 22),
+                    ),
+                    child: const Text('Compos'),
+                  ),
+              
                   const SizedBox(height: 20),
 
                   ElevatedButton(
