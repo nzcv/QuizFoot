@@ -1,0 +1,66 @@
+name: ci
+on:
+  push:
+    branches: 
+      - main
+    paths-ignore:
+      - README.md
+      - README_CN.md
+      - LICENSE
+  pull_request:
+    paths-ignore:
+      - README.md
+      - README_CN.md
+      - LICENSE
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - name: Clone repository
+        uses: actions/checkout@v4
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+  build-android:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Clone repository
+        uses: actions/checkout@v4
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+      - name: Set REPO_NAME environment variable
+        run: |
+          REPO_NAME=${GITHUB_REPOSITORY##*/}
+          echo "REPO_NAME=${REPO_NAME}" >> $GITHUB_ENV
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: zulu
+          java-version: 21      
+      - name: Build Flutter application for Android
+        run: flutter build apk --split-per-abi
+      - name: Rename armeabi-v7a APK
+        run: mv build/app/outputs/flutter-apk/app-armeabi-v7a-release.apk ${REPO_NAME}-android-armeabi-v7a.apk
+      - name: Rename arm64-v8a APK
+        run: mv build/app/outputs/flutter-apk/app-arm64-v8a-release.apk ${REPO_NAME}-android-arm64-v8a.apk
+      - name: Rename x86_64 APK
+        run: mv build/app/outputs/flutter-apk/app-x86_64-release.apk ${REPO_NAME}-android-x86_64.apk
+      - name: Upload armeabi-v7a APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${REPO_NAME}-android-armeabi-v7a.apk
+          path: ${REPO_NAME}-android-armeabi-v7a.apk
+      - name: Upload arm64-v8a APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${REPO_NAME}-android-arm64-v8a.apk
+          path: ${REPO_NAME}-android-arm64-v8a.apk
+      - name: Upload x86_64 APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${REPO_NAME}-android-x86_64.apk
+          path: ${REPO_NAME}-android-x86_64.apk
