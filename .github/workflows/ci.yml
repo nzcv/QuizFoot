@@ -14,15 +14,6 @@ on:
       - LICENSE
 
 jobs:
-  build-windows:
-    runs-on: windows-latest
-    steps:
-      - name: Clone repository
-        uses: actions/checkout@v4
-      - name: Set up Flutter
-        uses: subosito/flutter-action@v2
-        with:
-          channel: stable
   build-android:
     runs-on: ubuntu-latest
     steps:
@@ -44,23 +35,23 @@ jobs:
       - name: Build Flutter application for Android
         run: flutter build apk --split-per-abi
       - name: Rename armeabi-v7a APK
-        run: mv build/app/outputs/flutter-apk/app-armeabi-v7a-release.apk ${REPO_NAME}-android-armeabi-v7a.apk
+        run: mv build/app/outputs/flutter-apk/app-armeabi-v7a-release.apk android-armeabi-v7a.apk
       - name: Rename arm64-v8a APK
-        run: mv build/app/outputs/flutter-apk/app-arm64-v8a-release.apk ${REPO_NAME}-android-arm64-v8a.apk
+        run: mv build/app/outputs/flutter-apk/app-arm64-v8a-release.apk android-arm64-v8a.apk
       - name: Rename x86_64 APK
-        run: mv build/app/outputs/flutter-apk/app-x86_64-release.apk ${REPO_NAME}-android-x86_64.apk
+        run: mv build/app/outputs/flutter-apk/app-x86_64-release.apk android-x86_64.apk
       - name: Upload armeabi-v7a APK
         uses: actions/upload-artifact@v4
         with:
-          name: ${REPO_NAME}-android-armeabi-v7a.apk
-          path: ${REPO_NAME}-android-armeabi-v7a.apk
+          name: android-armeabi-v7a.apk
+          path: android-armeabi-v7a.apk
       - name: Upload arm64-v8a APK
         uses: actions/upload-artifact@v4
         with:
-          name: ${REPO_NAME}-android-arm64-v8a.apk
-          path: ${REPO_NAME}-android-arm64-v8a.apk
+          name: android-arm64-v8a.apk
+          path: android-arm64-v8a.apk
       - name: Upload x86_64 APK
         uses: actions/upload-artifact@v4
         with:
-          name: ${REPO_NAME}-android-x86_64.apk
-          path: ${REPO_NAME}-android-x86_64.apk
+          name: android-x86_64.apk
+          path: android-x86_64.apk
